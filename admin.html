@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PANEL ADMIN - MAFIA GAME</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: white; text-align: center; padding: 20px; }
+        .card { background: #222; border: 1px solid #444; padding: 20px; margin: 10px auto; max-width: 400px; border-radius: 10px; }
+        button { padding: 12px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; width: 100%; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-red { background: #e74c3c; color: white; }
+        .btn-gold { background: #f1c40f; color: black; }
+        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+    </style>
+</head>
+<body>
+    <h1>ADMIN CONTROL</h1>
+
+    <div class="card">
+        <h3>Ganti Status (Otomatis)</h3>
+        <button class="btn-gold" onclick="updateStatus('SIANG HARI', 'Waktunya diskusi! Siapa yang mencurigakan?')">SIANG HARI</button>
+        <button class="btn-blue" onclick="updateStatus('MALAM HARI', 'Semua tidur! Mafia silakan pilih korban.')">MALAM HARI</button>
+    </div>
+
+    <div class="card">
+        <h3>Update Info Manual</h3>
+        <input type="text" id="inp-info" placeholder="Contoh: Budi mati dibunuh...">
+        <button class="btn-blue" onclick="kirimManual()">KIRIM PENGUMUMAN</button>
+    </div>
+
+    <div class="card">
+        <h3>Reset Game</h3>
+        <button class="btn-red" onclick="resetSemua()">RESET CHAT & PEMAIN</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAme9eEMI10CqbZwSW164De7l9aKRLjIKQ",
+            authDomain: "mafia-game-21d71.firebaseapp.com",
+            databaseURL: "https://mafia-game-21d71-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mafia-game-21d71"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Fungsi Update Status
+        window.updateStatus = (stat, info) => {
+            set(ref(db, 'status_game'), stat);
+            set(ref(db, 'pengumuman'), info);
+            alert("Status Berubah ke " + stat);
+        };
+
+        // Fungsi Kirim Info Manual
+        window.kirimManual = () => {
+            const val = document.getElementById('inp-info').value;
+            if(val) set(ref(db, 'pengumuman'), val);
+            document.getElementById('inp-info').value = "";
+        };
+
+        // Fungsi Reset
+        window.resetSemua = () => {
+            if(confirm("Hapus semua data game?")) {
+                remove(ref(db, 'chat'));
+                remove(ref(db, 'daftar_pemain'));
+                set(ref(db, 'status_game'), "MULAI");
+                set(ref(db, 'pengumuman'), "Game baru dimulai!");
+                set(ref(db, 'pemain_mati'), "-");
+                alert("Game Bersih!");
+            }
+        };
+    </script>
+</body>
+</html>
