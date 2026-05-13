@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAFIA GAME - AUTO ROLE</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; }
+        .box { background: #333; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid red; }
+        #chat-box { height: 300px; background: #000; overflow-y: auto; padding: 10px; text-align: left; border: 1px solid #444; margin-bottom: 10px; border-radius: 5px; }
+        input { padding: 12px; background: #444; color: white; border: none; border-radius: 5px; width: 80%; margin-bottom: 10px; }
+        button { padding: 12px 25px; background: red; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #game-area { display: none; }
+        #login-area { margin-top: 50px; }
+        .role-badge { background: #ffcc00; color: black; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .death-warn { color: #ff4444; font-weight: bold; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>MAFIA GAME</h1>
+
+        <div id="login-area">
+            <div class="box">
+                <h3>Siapa namamu?</h3>
+                <input type="text" id="input-nama-awal" placeholder="Masukkan nama..."> <br>
+                <button id="btn-masuk">DAFTAR & MASUK</button>
+            </div>
+        </div>
+
+        <div id="game-area">
+            <div class="box">
+                <p>Halo, <b id="display-nama"></b></p>
+                <p>Peran Kamu: <span id="display-peran" class="role-badge">Menunggu Game Dimulai...</span></p>
+            </div>
+
+            <div class="box">
+                <small>STATUS GAME:</small>
+                <h2 id="status">MULAI</h2>
+                <p id="info">-</p>
+            </div>
+
+            <div id="chat-box"></div>
+            
+            <input type="text" id="pesan" placeholder="Ketik pesan diskusi..."> <br>
+            <button id="kirim">KIRIM</button>
+            <p id="warning" class="death-warn">ANDA SUDAH MATI!</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, query, limitToLast, onChildAdded } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAme9eEMI10CqbZwSW164De7l9aKRLjIKQ",
+            authDomain: "mafia-game-21d71.firebaseapp.com",
+            databaseURL: "https://mafia-game-21d71-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mafia-game-21d71",
+            storageBucket: "mafia-game-21d71.firebasestorage.app",
+            messagingSenderId: "548278648888",
+            appId: "1:548278648888:web:38d801983fa54057eaa6cd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let namaSaya = "";
+        let daftarMati = "";
+
+        // Pantau data penting
+        onValue(ref(db, 'status_game'), (s) => { document.getElementById('status').innerText = s.val() || "MULAI"; });
+        onValue(ref(db, 'pengumuman'), (s) => { document.getElementById('info').innerText = s.val() || "-"; });
+        onValue(ref(db, 'pemain_mati'), (s) => { daftarMati = s.val() || ""; });
+
+        // Pantau PERAN SAYA
+        function monitorRole(nama) {
+            onValue(ref(db, 'daftar_pemain/' + nama + '/peran'), (s) => {
+                if (s.exists()) {
+                    document.getElementById('display-peran').innerText = s.val();
+                }
+            });
+        }
+
+        // LOGIN & DAFTAR
+        document.getElementById('btn-masuk').onclick = () => {
+            const n = document.getElementById('input-nama-awal').value.trim();
+            if (n) {
+                namaSaya = n;
+                // Daftarkan pemain dengan peran default "Sipil"
+                set(ref(db, 'daftar_pemain/' + namaSaya), {
+                    nama: namaSaya,
+                    peran: "Warga (Belum Diacak)",
+                    waktu: Date.now()
+                });
+
+                document.getElementById('display-nama').innerText = namaSaya;
+                document.getElementById('login-area').style.display = "none";
+                document.getElementById('game-area').style.display = "block";
+                monitorRole(namaSaya);
+            }
+        };
+
+        // KIRIM PESAN
+        document.getElementById('kirim').onclick = () => {
+            const p = document.getElementById('pesan').value.trim();
+            if (!p) return;
+            if (daftarMati.toLowerCase().includes(namaSaya.toLowerCase()) && daftarMati !== "") {
+                document.getElementById('warning').style.display = "block";
+                return;
+            }
+            push(ref(db, 'chat'), { pengirim: namaSaya, teks: p });
+            document.getElementById('pesan').value = "";
+        };
+
+        // CHAT REALTIME
+        onChildAdded(query(ref(db, 'chat'), limitToLast(50)), (snap) => {
+            const d = snap.val();
+            const div = document.createElement('div');
+            div.style.marginBottom = "5px";
+            div.innerHTML = `<b style="color:cyan">${d.pengirim}:</b> ${d.teks}`;
+            document.getElementById('chat-box').appendChild(div);
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+        });
+    </script>
+</body>
+  </html>
+  
