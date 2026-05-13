@@ -15,7 +15,12 @@
 </head>
 <body>
     <h1>ADMIN CONTROL</h1>
-
+    <div class="card">
+    <h3>Monitor Chat Realtime</h3>
+    <div id="monitor-chat" style="height: 200px; background: black; color: lime; overflow-y: auto; text-align: left; padding: 10px; font-family: monospace; font-size: 12px;">
+        </div>
+    </div>
+    
     <div class="card">
         <h3>Ganti Status (Otomatis)</h3>
         <button class="btn-gold" onclick="updateStatus('SIANG HARI', 'Waktunya diskusi! Siapa yang mencurigakan?')">SIANG HARI</button>
@@ -34,6 +39,17 @@
     </div>
 
     <script type="module">
+        import { onChildAdded, query, ref, limitToLast } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+const monitorBox = document.getElementById('monitor-chat');
+onChildAdded(query(ref(db, 'chat'), limitToLast(50)), (snap) => {
+    const d = snap.val();
+    const div = document.createElement('div');
+    div.innerHTML = `> [${d.pengirim}]: ${d.teks}`;
+    monitorBox.appendChild(div);
+    monitorBox.scrollTop = monitorBox.scrollHeight;
+});
+    
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
